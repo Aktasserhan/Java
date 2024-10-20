@@ -1,2 +1,2 @@
-# Jave
+# Java
 Developed with Apache NetBeans
