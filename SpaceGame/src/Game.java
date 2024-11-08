@@ -14,6 +14,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.imageio.ImageIO;
 import javax.imageio.stream.FileImageInputStream;
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JComponent;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -46,6 +51,7 @@ class Fire{
     
 }
 public class Game extends JPanel implements KeyListener,ActionListener{
+    private Color currentColor = generateRandomColor();
     Timer timer = new Timer(5,this);
     
     private int passTime = 0;
@@ -58,13 +64,25 @@ public class Game extends JPanel implements KeyListener,ActionListener{
     private int balX = 0;
     private int balbX = 4;     
     private int spaceShipX = 0;
+    private int spaceShipY = 480;
     private int SSpaceX = 20;
+    private int SSpaceY = 20;
+    
+     private Color generateRandomColor() {
+        return new Color((int)(Math.random() * 255), 
+                         (int)(Math.random() * 255), 
+                         (int)(Math.random() * 255));
+    }
+    
     public boolean check(){
         for(Fire fire : bullets){
             
             if(new Rectangle(fire.getX(),fire.getY(),10,20).intersects(new Rectangle(balX,0,20,20))){
+                balX = 0;
+                currentColor = generateRandomColor();
                 return true;
             }
+            
         }
         return false; 
     }
@@ -81,15 +99,32 @@ public class Game extends JPanel implements KeyListener,ActionListener{
         
         
     }
-
+    public void addClap(){
+        
+        try { 
+            AudioInputStream stream = AudioSystem.getAudioInputStream(new File("clap.wav"));
+            
+            Clip clip = AudioSystem.getClip();
+            clip.open(stream);
+            clip.start();
+            
+            
+        } catch (UnsupportedAudioFileException ex) {
+            Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (LineUnavailableException ex) {
+            Logger.getLogger(Game.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    public int hitCount;
     @Override
     public void paint(Graphics g) {
         super.paint(g); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/OverriddenMethodBody
             passTime += 5;
-            g.setColor(Color.red);
+            g.setColor(currentColor);
             g.fillOval(balX, 0, 20, 20);
-            
-            g.drawImage(image, spaceShipX, 480, image.getWidth()/15,image.getHeight()/15,this);
+            g.drawImage(image, spaceShipX, spaceShipY, image.getWidth()/15,image.getHeight()/15,this);
             
             for(Fire fire : bullets){
                 if(fire.getY() < 0 ){
@@ -99,15 +134,21 @@ public class Game extends JPanel implements KeyListener,ActionListener{
             g.setColor(Color.blue);
             
             for(Fire fire : bullets){
-                g.fillOval(fire.getX()+4, fire.getY()-13, 10, 10);
+                g.fillOval(fire.getX()+4, fire.getY()-15, 10, 10);
             }
             if(check()){
-                timer.stop();
+                g.dispose();
+                balX+=1;
+                hitCount += 1;
+                /*timer.stop();
                 String message = "You win....\n"+
                                  "Spended Bullet : "+spentBullets+
                                  "\nPassed Time : "+passTime/1000.0+" Seconts";
+                addClap();
                 JOptionPane.showMessageDialog(this, message);
-                System.exit(0);
+                System.exit(0);*/
+                
+              
             }
     }
 
@@ -126,6 +167,16 @@ public class Game extends JPanel implements KeyListener,ActionListener{
     @Override
     public void keyPressed(KeyEvent e) {
         int c = e.getKeyCode();
+        if(c == KeyEvent.VK_LEFT || c == KeyEvent.VK_Q){
+            String message =    "Hit Count : "+ hitCount+
+                                 "\nSpended Bullet : "+spentBullets+
+                                 "\nPassed Time : "+passTime/1000.0+" Seconts";
+                //addClap();
+                
+                JOptionPane.showMessageDialog(this,message);
+                //timer.stop();
+                System.exit(0);
+        }
         if(c == KeyEvent.VK_LEFT || c == KeyEvent.VK_A){
             if(spaceShipX <= 0){
                 spaceShipX = 0;
@@ -142,12 +193,28 @@ public class Game extends JPanel implements KeyListener,ActionListener{
                 spaceShipX +=SSpaceX;
             }
         }
-        else if(c == KeyEvent.VK_CONTROL || c == KeyEvent.VK_W){
-            bullets.add(new Fire(spaceShipX+15,480));
+        else if(c == KeyEvent.VK_CONTROL || c == KeyEvent.VK_SPACE){
+            bullets.add(new Fire(spaceShipX-10 + image.getWidth() / 30, spaceShipY));
             spentBullets++;
-            
-            
-            
+
+        }
+          else if(c == KeyEvent.VK_W){
+           if(spaceShipY <= 100){
+                spaceShipY = 100;
+            }
+            else{
+                spaceShipY -= SSpaceY;
+            }
+
+        }
+        else if(c == KeyEvent.VK_CONTROL || c == KeyEvent.VK_S){
+           if(spaceShipY >= 480){
+                spaceShipY = 480;
+            }
+            else{
+                spaceShipY += SSpaceY;
+            }
+
         }
     }
 
